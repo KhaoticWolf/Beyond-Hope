@@ -219,6 +219,12 @@
   .note-preview.show{display:block;}
 
   /* ---------- FOOTER ---------- */
+  .footer-legal{
+    margin-top:18px; padding-top:18px; border-top:1px solid var(--panel-line);
+    font-family:'JetBrains Mono',monospace; font-size:10px; line-height:1.8; color:var(--text-mute);
+  }
+  .footer-legal p{margin-bottom:5px;}
+  .footer-legal p:last-child{margin-bottom:0;}
   footer{
     margin-top:70px; padding-top:22px; border-top:1px solid var(--panel-line);
     font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-mute);
@@ -278,6 +284,30 @@
   .nav-brand{display:flex; align-items:center; gap:9px; text-decoration:none;}
   .nav-brand img{width:26px; height:26px; border-radius:50%; display:block; border:1px solid var(--panel-line);}
   .nav-auth{display:flex; align-items:center; gap:10px;}
+  .nav-icon-btn{
+    background:transparent; border:1px solid var(--panel-line); color:var(--text-dim);
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.05em; text-transform:uppercase;
+    padding:8px 12px; cursor:pointer;
+  }
+  .nav-icon-btn:hover{border-color:var(--blue); color:var(--blue);}
+  .search-overlay{
+    position:fixed; inset:0; z-index:200; background:rgba(6,9,13,0.96);
+    display:none; flex-direction:column; align-items:center; padding:90px 24px 40px;
+    backdrop-filter:blur(6px);
+  }
+  .search-overlay.open{display:flex;}
+  .search-box{width:100%; max-width:640px; display:flex; gap:10px; align-items:center; border-bottom:2px solid var(--blue); padding-bottom:14px; margin-bottom:24px;}
+  .search-box input{flex:1; background:transparent; border:none; color:#fff; font-family:'Inter',sans-serif; font-size:19px; outline:none;}
+  .search-box input::placeholder{color:var(--text-mute);}
+  .search-close{background:none; border:1px solid var(--panel-line); color:var(--text-dim); width:34px; height:34px; cursor:pointer; flex-shrink:0;}
+  .search-results{width:100%; max-width:640px; display:flex; flex-direction:column; gap:2px;}
+  .search-result{
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    padding:14px 16px; background:var(--panel); border:1px solid var(--panel-line); text-decoration:none; color:var(--text);
+  }
+  .search-result:hover{border-color:var(--blue);}
+  .search-result-type{font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--text-mute);}
+  .search-empty, .search-hint{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-mute); padding:20px 0; text-align:center;}
   .btn-discord{
     display:inline-flex; align-items:center; gap:8px;
     font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:.05em; text-transform:uppercase;
@@ -313,11 +343,24 @@
     <a href="./events.html">Events</a>
     <a href="./roadmap.html" class="active">Roadmap</a>
     <a href="./devlog.html">Devlog</a>
+    <a href="./creators.html">Creators</a>
+    <a href="./merch.html">Merch</a>
+    <a href="./press-kit.html">Downloads</a>
   </div>
+  <button class="nav-icon-btn" id="search-open-btn" aria-label="Search" title="Search (Ctrl+K)">Search</button>
   <div class="nav-auth" id="nav-auth">
     <button class="btn-discord" id="nav-discord-btn">Sign in with Discord</button>
   </div>
 </nav>
+<div class="search-overlay" id="search-overlay">
+  <div class="search-box">
+    <input type="text" id="search-input" placeholder="Search story, news, devlog, events..." autocomplete="off">
+    <button class="search-close" id="search-close">&times;</button>
+  </div>
+  <div class="search-results" id="search-results">
+    <div class="search-hint">Type at least 2 characters to search across Story, News, Devlog and Events.</div>
+  </div>
+</div>
 
 <div class="gate-overlay" id="gate-overlay">
   <div class="gate-box">
@@ -388,6 +431,13 @@
     </div>
   </footer>
 
+  <div class="footer-legal">
+    <p>© 2026 Khaotic Studios, LLC. All rights reserved.</p>
+    <p>BeyondHope, the Project Kit, and all related content including but not limited to software, game mechanics, characters, text, graphics, audio, video, and logos are the exclusive property of Khaotic Studios, LLC.</p>
+    <p>This product and its content are protected by United States and international copyright laws. Unauthorized reproduction, distribution, modification, or public display of any materials is strictly prohibited and may result in civil and criminal penalties.</p>
+  </div>
+
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -395,6 +445,65 @@
 const SUPABASE_URL = "https://iizdlordeffzjsekujue.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpemRsb3JkZWZmempzZWt1anVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDA1MDMsImV4cCI6MjEwMjkxNjUwM30.iBxxknwWAKZwGaBDXGpXqUCizCtxiFTlggvT2bTOtq8";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ---------- Site search ---------- */
+function openSearch(){
+  document.getElementById('search-overlay').classList.add('open');
+  document.getElementById('search-input').focus();
+}
+function closeSearch(){
+  document.getElementById('search-overlay').classList.remove('open');
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-results').innerHTML = '<div class="search-hint">Type at least 2 characters to search across Story, News, Devlog and Events.</div>';
+}
+function escSearch(str){
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+let searchTimer;
+function onSearchInput(e){
+  clearTimeout(searchTimer);
+  const term = e.target.value.trim();
+  searchTimer = setTimeout(function(){ runSearch(term); }, 250);
+}
+async function runSearch(term){
+  const box = document.getElementById('search-results');
+  if(!term || term.length < 2){
+    box.innerHTML = '<div class="search-hint">Type at least 2 characters to search across Story, News, Devlog and Events.</div>';
+    return;
+  }
+  const like = '%' + term + '%';
+  try{
+    const [story, news, devlog, events] = await Promise.all([
+      sb.from('story_posts').select('id,title').ilike('title', like).limit(5),
+      sb.from('news_posts').select('id,title').ilike('title', like).limit(5),
+      sb.from('devlog_posts').select('id,title').ilike('title', like).limit(5),
+      sb.from('events').select('id,title').ilike('title', like).limit(5),
+    ]);
+    const results = []
+      .concat((story.data||[]).map(function(r){ return {type:'Story', title:r.title, href:'./story.html'}; }))
+      .concat((news.data||[]).map(function(r){ return {type:'News', title:r.title, href:'./news.html'}; }))
+      .concat((devlog.data||[]).map(function(r){ return {type:'Devlog', title:r.title, href:'./devlog.html'}; }))
+      .concat((events.data||[]).map(function(r){ return {type:'Event', title:r.title, href:'./events.html'}; }));
+    if(!results.length){
+      box.innerHTML = '<div class="search-empty">No results for "' + escSearch(term) + '"</div>';
+      return;
+    }
+    box.innerHTML = results.map(function(r){
+      return '<a class="search-result" href="' + r.href + '"><span>' + escSearch(r.title) + '</span><span class="search-result-type">' + r.type + '</span></a>';
+    }).join('');
+  }catch(e){ console.error('Search failed', e); }
+}
+function attachSearchHandlers(){
+  document.getElementById('search-open-btn').addEventListener('click', openSearch);
+  document.getElementById('search-close').addEventListener('click', closeSearch);
+  document.getElementById('search-input').addEventListener('input', onSearchInput);
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape') closeSearch();
+    if((e.ctrlKey || e.metaKey) && e.key === 'k'){ e.preventDefault(); openSearch(); }
+  });
+}
 let isEditor = false;
 
 const DATA = [
@@ -855,6 +964,7 @@ function attachHandlers(){
 
 (async function init(){
   render();
+  attachSearchHandlers();
   await initAuth();
   await loadState();
   applyState();
