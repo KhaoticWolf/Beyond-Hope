@@ -331,6 +331,32 @@
   .gate-eyebrow{font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--pink); margin-bottom:14px;}
   .gate-box h2{font-family:'JetBrains Mono',monospace; font-size:21px; color:#fff; margin-bottom:12px; font-weight:800;}
   .gate-box p{color:var(--text-dim); font-size:13.5px; line-height:1.7; margin-bottom:28px;}
+  .btn-dev-toggle{
+    font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.05em; text-transform:uppercase;
+    background:transparent; border:1px solid var(--panel-line); color:var(--text-mute); padding:8px 10px; cursor:pointer;
+  }
+  .btn-dev-toggle:hover{border-color:var(--blue); color:var(--blue);}
+  .nav-user.owner{color:var(--green);}
+  .dev-login-popover{
+    display:none; position:fixed; top:64px; right:24px; z-index:150;
+    background:var(--panel); border:1px solid var(--panel-line); padding:16px; gap:8px; flex-direction:column;
+    min-width:220px; box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  }
+  .dev-login-popover.open{display:flex;}
+  .dev-login-popover input{
+    background:#0c1219; border:1px solid var(--panel-line); color:var(--text); font-family:'Inter',sans-serif; font-size:13px; padding:8px 10px;
+  }
+  .dev-login-popover input:focus{outline:none; border-color:var(--blue);}
+  .dev-login-popover button{
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.05em; text-transform:uppercase;
+    background:var(--blue); border:1px solid var(--blue); color:#03070c; padding:8px; cursor:pointer; font-weight:700;
+  }
+  .dev-auth-error{color:var(--coral); font-size:11px; font-family:'JetBrains Mono',monospace;}
+  [data-field]{outline:1px dashed transparent; border-radius:2px; transition:outline-color .15s ease, background .15s ease;}
+  .is-owner [data-field], .is-editor [data-field]{cursor:text;}
+  .is-owner [data-field]:hover, .is-editor [data-field]:hover{outline-color:var(--panel-line); background:rgba(91,155,255,0.06);}
+  .is-owner [data-field]:focus, .is-editor [data-field]:focus{outline-color:var(--blue); background:rgba(91,155,255,0.1);}
+
 </style>
 </head>
 <body>
@@ -350,15 +376,23 @@
   <button class="nav-icon-btn" id="search-open-btn" aria-label="Search" title="Search (Ctrl+K)">Search</button>
   <div class="nav-auth" id="nav-auth">
     <button class="btn-discord" id="nav-discord-btn">Sign in with Discord</button>
+    <button class="btn-dev-toggle" id="dev-toggle-btn">Dev</button>
   </div>
 </nav>
+<div class="dev-login-popover" id="dev-login-popover">
+  <input type="email" id="dev-email" placeholder="email" autocomplete="username">
+  <input type="password" id="dev-password" placeholder="password" autocomplete="current-password">
+  <button id="dev-signin-btn">Sign in</button>
+  <span class="dev-auth-error" id="dev-auth-error"></span>
+</div>
+
 <div class="search-overlay" id="search-overlay">
   <div class="search-box">
-    <input type="text" id="search-input" placeholder="Search story, news, devlog, events..." autocomplete="off">
+    <input type="text" id="search-input" placeholder="Search the whole site..." autocomplete="off">
     <button class="search-close" id="search-close">&times;</button>
   </div>
   <div class="search-results" id="search-results">
-    <div class="search-hint">Type at least 2 characters to search across Story, News, Devlog and Events.</div>
+    <div class="search-hint">Type at least 2 characters to search Story, News, Devlog, Events, and every Roadmap phase.</div>
   </div>
 </div>
 
@@ -391,17 +425,6 @@
       </div>
     </div>
   </header>
-
-  <div class="auth-panel" id="auth-panel">
-    <span id="auth-status" class="auth-status">Viewing live · read only</span>
-    <div id="signin-form" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-      <input type="email" id="auth-email" placeholder="email" autocomplete="username">
-      <input type="password" id="auth-password" placeholder="password" autocomplete="current-password">
-      <button id="signin-btn">Sign in to edit</button>
-      <span class="auth-error" id="auth-error"></span>
-    </div>
-    <button id="signout-btn" style="display:none;">Sign out</button>
-  </div>
 
   <div class="progress-panel">
     <div class="progress-label">Overall progress <b id="progress-count">0 / 65</b></div>
@@ -447,6 +470,20 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ---------- Site search ---------- */
+const PHASE_TITLES = [["00","New project audit + protected baseline lock"],["01","BeyondHope folder / tags / data / framework conventions"],["02","Dedicated server + replication architecture plan"],["03","Replication graph / open-world relevancy prototype"],["04","Interaction"],["05","Item definitions / instances"],["06","Hands"],["07","Replicated survival inventory + UI"],["08","Equipment + visible MetaHuman gear"],["09","Vitality / survival attributes"],["10","Body regions / armor / damage"],["11","Existing ragdoll hit-reaction integration"],["12","Weapon framework"],["13","Epic sample weapon / VFX asset audit & curated import"],["14","First rifle vertical slice"],["15","True FP ADS + third-person ADS"],["16","Ballistics / physical projectiles / penetration"],["17","Attachments"],["18","Procedural weapon handling"],["19","Standard melee"],["20","Existing finisher / tackle / takedown integration"],["21","Throwables / explosives"],["22","Medical / injuries / bleeding"],["23","Downed / revive / death / corpse"],["24","Loot / containers / population manager"],["25","Common UI root / survival UI style"],["26","Main menu"],["27","Character profile / MetaHuman creator"],["28","Steam online layer"],["29","Survival server browser"],["30","Survival lobby"],["31","Multiplayer hub / generic lobby"],["32","Settings / accessibility / keybinds"],["33","Loading / travel / disconnect / reconnect"],["34","Shared AI foundation"],["35","Human / civilian AI"],["36","Zombie AI"],["37","Mutant AI"],["38","Companion core"],["39","Companion combat"],["40","Companion inventory / equipment"],["41","Companion revive / loot / smart objects / vehicles"],["42","AI population LOD / open-world optimization"],["43","Crafting"],["44","Building"],["45","Building replication / dormancy / persistence"],["46","Vehicles"],["47","Vehicle modifications"],["48","Vehicle networking / scale optimization"],["49","World time"],["50","Weather foundation"],["51","Spawn / respawn"],["52","Server rules"],["53","Persistence / versioned save data"],["54","Admin / development tools"],["55","Dedicated Steam server"],["56","World Partition dedicated-server validation"],["57","32-player test"],["58","64-player test"],["59","96-player test"],["60","128-player target test"],["61","Bandwidth / replication optimization"],["62","AI / physics / animation optimization"],["63","UI / UX polish"],["64","Packaged build / regression / production readiness"]];
+const STATIC_PAGES = [
+  {title:'Home', href:'./index.html'},
+  {title:'Story', href:'./story.html'},
+  {title:'News', href:'./news.html'},
+  {title:'Events', href:'./events.html'},
+  {title:'Roadmap', href:'./roadmap.html'},
+  {title:'Devlog', href:'./devlog.html'},
+  {title:'Creators', href:'./creators.html'},
+  {title:'Merch', href:'./merch.html'},
+  {title:'Downloads', href:'./press-kit.html'},
+  {title:'Press Kit', href:'./press-kit.html'},
+];
+
 function openSearch(){
   document.getElementById('search-overlay').classList.add('open');
   document.getElementById('search-input').focus();
@@ -454,7 +491,7 @@ function openSearch(){
 function closeSearch(){
   document.getElementById('search-overlay').classList.remove('open');
   document.getElementById('search-input').value = '';
-  document.getElementById('search-results').innerHTML = '<div class="search-hint">Type at least 2 characters to search across Story, News, Devlog and Events.</div>';
+  document.getElementById('search-results').innerHTML = '<div class="search-hint">Type at least 2 characters to search the whole site.</div>';
 }
 function escSearch(str){
   const div = document.createElement('div');
@@ -470,10 +507,13 @@ function onSearchInput(e){
 async function runSearch(term){
   const box = document.getElementById('search-results');
   if(!term || term.length < 2){
-    box.innerHTML = '<div class="search-hint">Type at least 2 characters to search across Story, News, Devlog and Events.</div>';
+    box.innerHTML = '<div class="search-hint">Type at least 2 characters to search the whole site.</div>';
     return;
   }
   const like = '%' + term + '%';
+  const lowerTerm = term.toLowerCase();
+
+  let dbResults = [];
   try{
     const [story, news, devlog, events] = await Promise.all([
       sb.from('story_posts').select('id,title').ilike('title', like).limit(5),
@@ -481,19 +521,31 @@ async function runSearch(term){
       sb.from('devlog_posts').select('id,title').ilike('title', like).limit(5),
       sb.from('events').select('id,title').ilike('title', like).limit(5),
     ]);
-    const results = []
+    dbResults = []
       .concat((story.data||[]).map(function(r){ return {type:'Story', title:r.title, href:'./story.html'}; }))
       .concat((news.data||[]).map(function(r){ return {type:'News', title:r.title, href:'./news.html'}; }))
       .concat((devlog.data||[]).map(function(r){ return {type:'Devlog', title:r.title, href:'./devlog.html'}; }))
       .concat((events.data||[]).map(function(r){ return {type:'Event', title:r.title, href:'./events.html'}; }));
-    if(!results.length){
-      box.innerHTML = '<div class="search-empty">No results for "' + escSearch(term) + '"</div>';
-      return;
-    }
-    box.innerHTML = results.map(function(r){
-      return '<a class="search-result" href="' + r.href + '"><span>' + escSearch(r.title) + '</span><span class="search-result-type">' + r.type + '</span></a>';
-    }).join('');
   }catch(e){ console.error('Search failed', e); }
+
+  const phaseResults = PHASE_TITLES
+    .filter(function(p){ return p[1].toLowerCase().indexOf(lowerTerm) !== -1; })
+    .slice(0, 5)
+    .map(function(p){ return {type:'Phase ' + p[0], title:p[1], href:'./roadmap.html'}; });
+
+  const pageResults = STATIC_PAGES
+    .filter(function(p){ return p.title.toLowerCase().indexOf(lowerTerm) !== -1; })
+    .map(function(p){ return {type:'Page', title:p.title, href:p.href}; });
+
+  const results = pageResults.concat(dbResults, phaseResults);
+
+  if(!results.length){
+    box.innerHTML = '<div class="search-empty">No results for "' + escSearch(term) + '"</div>';
+    return;
+  }
+  box.innerHTML = results.map(function(r){
+    return '<a class="search-result" href="' + r.href + '"><span>' + escSearch(r.title) + '</span><span class="search-result-type">' + r.type + '</span></a>';
+  }).join('');
 }
 function attachSearchHandlers(){
   document.getElementById('search-open-btn').addEventListener('click', openSearch);
@@ -821,10 +873,12 @@ function attachMetaHandlers(){
   });
 }
 
-/* ---------- Auth ---------- */
-const OWNER_EMAIL = "lukeclowes@live.co.uk"; // <-- set this to your Supabase owner login email
+/* ---------- Unified site auth (Discord + Dev owner login) ---------- */
+const OWNER_EMAIL = "lukeclowes@live.co.uk";
+let isSignedIn = false;
+let isOwner = false;
 
-function escHtmlNav(str){
+function escAuthHtml(str){
   const div = document.createElement('div');
   div.textContent = str || '';
   return div.innerHTML;
@@ -832,18 +886,25 @@ function escHtmlNav(str){
 async function signInDiscord(){
   await sb.auth.signInWithOAuth({ provider:'discord', options:{ redirectTo: window.location.href } });
 }
+function toggleDevPopover(){
+  const pop = document.getElementById('dev-login-popover');
+  if(pop) pop.classList.toggle('open');
+}
 function renderNavAuth(session){
   const el = document.getElementById('nav-auth');
   if(!el) return;
+  const owner = !!(session && session.user && session.user.email === OWNER_EMAIL);
   if(session && session.user){
-    const name = (session.user.user_metadata && (session.user.user_metadata.full_name || session.user.user_metadata.name)) || session.user.email || 'Member';
-    el.innerHTML = '<span class="nav-user">' + escHtmlNav(name) + '</span><button class="btn-ghost-sm" id="nav-signout-btn">Sign out</button>';
+    const name = owner ? ('Editing as ' + session.user.email) : ((session.user.user_metadata && (session.user.user_metadata.full_name || session.user.user_metadata.name)) || session.user.email || 'Member');
+    el.innerHTML = '<span class="nav-user' + (owner ? ' owner' : '') + '">' + escAuthHtml(name) + '</span><button class="btn-ghost-sm" id="nav-signout-btn">Sign out</button>';
     const so = document.getElementById('nav-signout-btn');
-    if(so) so.addEventListener('click', async ()=>{ await sb.auth.signOut(); });
+    if(so) so.addEventListener('click', async function(){ await sb.auth.signOut(); });
   } else {
-    el.innerHTML = '<button class="btn-discord" id="nav-discord-btn">Sign in with Discord</button>';
-    const btn = document.getElementById('nav-discord-btn');
-    if(btn) btn.addEventListener('click', signInDiscord);
+    el.innerHTML = '<button class="btn-discord" id="nav-discord-btn">Sign in with Discord</button><button class="btn-dev-toggle" id="dev-toggle-btn">Dev</button>';
+    const db = document.getElementById('nav-discord-btn');
+    if(db) db.addEventListener('click', signInDiscord);
+    const dt = document.getElementById('dev-toggle-btn');
+    if(dt) dt.addEventListener('click', toggleDevPopover);
   }
 }
 function updateGate(session){
@@ -852,51 +913,41 @@ function updateGate(session){
   if(session && session.user){ gate.classList.add('hidden'); }
   else { gate.classList.remove('hidden'); }
 }
-
-function setEditorUI(on, email){
-  isEditor = on;
-  document.body.classList.toggle('is-editor', on);
-  document.querySelectorAll('[data-field]').forEach(el=>{
-    el.contentEditable = on ? 'true' : 'false';
-  });
-  document.getElementById('signin-form').style.display = on ? 'none' : 'flex';
-  document.getElementById('signout-btn').style.display = on ? 'inline-block' : 'none';
-  const status = document.getElementById('auth-status');
-  status.textContent = on ? `Editing as ${email}` : 'Viewing live · read only';
-  status.classList.toggle('live', on);
-}
-
 function applySession(session){
+  isSignedIn = !!(session && session.user);
+  isOwner = isSignedIn && session.user.email === OWNER_EMAIL;
   renderNavAuth(session);
   updateGate(session);
-  const owner = !!(session && session.user && session.user.email === OWNER_EMAIL);
-  setEditorUI(owner, session && session.user ? session.user.email : '');
+  document.body.classList.toggle('is-owner', isOwner);
+  document.body.classList.toggle('is-editor', isOwner);
+  if(typeof isEditor !== 'undefined') isEditor = isOwner;
+  document.querySelectorAll('[data-field]').forEach(function(el){ el.contentEditable = isOwner ? 'true' : 'false'; });
+  if(typeof onSessionChange === 'function') onSessionChange(session, isOwner);
+  if(typeof onOwnerChange === 'function') onOwnerChange(isOwner, session);
 }
-
-async function initAuth(){
+async function initSiteAuth(){
   const { data: { session } } = await sb.auth.getSession();
   applySession(session);
+  sb.auth.onAuthStateChange(function(event, session){ applySession(session); });
 
-  sb.auth.onAuthStateChange((event, session)=>{ applySession(session); });
-
-  document.getElementById('signin-btn').addEventListener('click', async ()=>{
-    const email = document.getElementById('auth-email').value.trim();
-    const password = document.getElementById('auth-password').value;
-    const errEl = document.getElementById('auth-error');
-    errEl.textContent = '';
-    if(!email || !password){ errEl.textContent = 'Enter email and password'; return; }
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    if(error){ errEl.textContent = error.message; return; }
-    document.getElementById('auth-password').value = '';
-  });
-
-  document.getElementById('signout-btn').addEventListener('click', async ()=>{
-    await sb.auth.signOut();
-  });
-
+  const devBtn = document.getElementById('dev-signin-btn');
+  if(devBtn){
+    devBtn.addEventListener('click', async function(){
+      const email = document.getElementById('dev-email').value.trim();
+      const password = document.getElementById('dev-password').value;
+      const errEl = document.getElementById('dev-auth-error');
+      errEl.textContent = '';
+      if(!email || !password){ errEl.textContent = 'Enter email and password'; return; }
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if(error){ errEl.textContent = error.message; return; }
+      document.getElementById('dev-password').value = '';
+      document.getElementById('dev-login-popover').classList.remove('open');
+    });
+  }
   const gateBtn = document.getElementById('gate-discord-btn');
   if(gateBtn) gateBtn.addEventListener('click', signInDiscord);
 }
+async function initNavAuth(){ await initSiteAuth(); }
 
 function attachHandlers(){
   document.getElementById('spine').addEventListener('click', (e)=>{
@@ -965,7 +1016,7 @@ function attachHandlers(){
 (async function init(){
   render();
   attachSearchHandlers();
-  await initAuth();
+  await initSiteAuth();
   await loadState();
   applyState();
   attachHandlers();
